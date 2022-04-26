@@ -52,21 +52,18 @@ def extract_token(request):
 # ------------- ROUTES -------------
 
 @app.route("/")
-@app.route("/", methods=["GET"])
-def cry():
+
+@app.route("/tempo/playlist/", methods=["POST"])
+def create_new_playlist():
     """
-    Cry
+    Endpoint for creating a new playlist from Spotify with specified length\n
+    Request body:\n
+    \t- hours: Hours component of playlist length
+    \t- minutes: Minutes component of playlist length \n
+    Returns:\n 
+    \t- TODO: ADD RETURNED DATA HERE
     """
     pass
-
-
-@app.route("/", methods=["POST"])
-def cry_more():
-    """
-    Cry more
-    """
-    pass
-
 
 # ------------- RUN APP -------------
 
