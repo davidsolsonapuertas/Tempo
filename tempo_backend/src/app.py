@@ -1,10 +1,9 @@
 import json
-from turtle import update
+import users_dao
+import datetime
 
 from db import db
 from flask import Flask, request
-import users_dao
-import datetime
 
 db_filename = "auth.db"
 app = Flask(__name__)
@@ -63,6 +62,26 @@ def create_new_playlist():
     Returns:\n 
     \t- TODO: ADD RETURNED DATA HERE
     """
+    # verify user
+    
+    was_successful, session_token = extract_token(request)
+    
+    if not was_successful:
+        return session_token
+    
+    user = users_dao.get_user_by_session_token(session_token)
+    if not user or not user.verify_session_token(session_token):
+        return failure_response("Invalid session token")
+    
+    # create playlist
+        
+    body = json.loads(request.data)
+    hours = body.get("hours")
+    minutes = body.get("minutes")
+    
+    if hours is None or minutes is None:
+        return failure_response("Request body is missing hours or minutes")
+    
     pass
 
 # ------------- RUN APP -------------
