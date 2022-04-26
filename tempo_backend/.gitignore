@@ -1,0 +1,5 @@
+.venv
+venv/
+__pycache__/
+tempo.db
+.env

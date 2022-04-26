@@ -1,0 +1,7 @@
+version: '3'
+services:
+  demo: 
+    image: zhiqinhe1592/tempo
+    env_file: .env
+    ports: 
+      - "5000:5000"
