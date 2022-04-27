@@ -29,22 +29,6 @@ def get_user_by_update_token(update_token):
     pass
 
 
-def verify_credentials(username, password):
-    """
-    Returns true if the credentials match, otherwise returns false
-    """
-    pass
-
-
-def create_user(username, password):
-    """
-    Creates a User object in the database
-
-    Returns if creation was successful, and the User object
-    """
-    pass
-
-
 def renew_session(update_token):
     """
     Renews a user's session token
