@@ -98,7 +98,7 @@ class Playlist(db.Model):
     """
     Time when the plyalist was last played
     
-    null if playlist was never played before
+    None if playlist was never played before
     """
 
     # association information
@@ -141,7 +141,7 @@ class Song(db.Model):
 
     # association information
     playlist_id = db.Column(db.Integer, db.ForeignKey(
-        "playlist.id"), nullable=False)
+        "playlists.id"), nullable=False)
     """Song model has many-to-1 relationship with Playlist model"""
 
     def __init__(self, **kwargs):
