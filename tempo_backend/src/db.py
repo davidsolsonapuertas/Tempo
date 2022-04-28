@@ -13,7 +13,8 @@ db = SQLAlchemy()
 
 class User(db.Model):
     """
-    User model\n
+    User model
+    
     Has 1-to-many relationship with Playlist model
     """
     __tablename__ = 'users'
@@ -75,7 +76,8 @@ class User(db.Model):
 
 class Playlist(db.Model):
     """
-    Playlist model\n
+    Playlist model
+    
     Has many-to-1 relationship with User model
     """
     __tablename__ = 'playlists'
@@ -87,13 +89,15 @@ class Playlist(db.Model):
 
     title = db.Column(db.String, nullable=False)
     """
-    Title of playlist\n
+    Title of playlist
+    
     "" if playlist is unfavorited
     """
 
     history = db.Column(db.DateTime)
     """
-    Time when the plyalist was last played\n
+    Time when the plyalist was last played
+    
     null if playlist was never played before
     """
 
@@ -125,7 +129,8 @@ class Playlist(db.Model):
 
 class Song(db.Model):
     """
-    Song model\n
+    Song model    
+    
     Has many-to-1 relationship with Playlist model
     """
     __tablename__ = 'songs'
