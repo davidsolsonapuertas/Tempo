@@ -37,12 +37,13 @@ class User(db.Model):
 
     def __init__(self, **kwargs):
         """
-        Initializes a User object\n
+        Initializes a User object
+        
         kwargs:
-            - username (str) = Username of Spotify user
-            - session_token (str) = Session token of Spotify user
-            - session_expiration (str) = Session expiration datetime of Spotify user
-            - update_token (str) = Update token of Spotify user
+            username (str): Username of Spotify user
+            session_token (str): Session token of Spotify user
+            session_expiration (str): Session expiration datetime of Spotify user
+            update_token (str): Update token of Spotify user
         """
         self.username = kwargs.get("username")
         self.session_token = kwargs.get("session_token")
@@ -108,12 +109,13 @@ class Playlist(db.Model):
 
     def __init__(self, **kwargs):
         """
-        Initializes a Playlist object\n
+        Initializes a Playlist object
+        
         kwargs:
-            - sum_length (int) = Total sum. length of songs in playlist
-            - title (str) = Title of playlist, "" if playlist is not favorited
-            - history (Datetime) = Datetime when the playlist was last played, null if playlist was never played before
-            - user_id (int) = User id that Playlist belongs to
+            sum_length (int): Total sum. length of songs in playlist
+            title (str): Title of playlist, "" if playlist is not favorited
+            history (Datetime): Datetime when the playlist was last played, null if playlist was never played before
+            user_id (int): User id that Playlist belongs to
         """
         self.sum_length = kwargs.get("sum_length")
         self.title = kwargs.get("title", "")
@@ -139,10 +141,11 @@ class Song(db.Model):
 
     def __init__(self, **kwargs):
         """
-        Initializes a Playlist object\n
+        Initializes a Playlist object
+        
         kwargs:
-            - spotify_id (str) = Spotify id of song
-            - playlist_id (int) = Playlist that Song belongs to
+            spotify_id (str) = Spotify id of song
+            playlist_id (int) = Playlist that Song belongs to
         """
         self.spotify_id = kwargs.get("spotify_id")
         self.playlist_id = kwargs.get("playlist_id")
