@@ -51,7 +51,6 @@ def extract_token(request):
 # ------------- ROUTES -------------
 
 @app.route("/")
-
 @app.route("/tempo/playlist/", methods=["POST"])
 def create_new_playlist():
     """
@@ -63,28 +62,75 @@ def create_new_playlist():
     \t- TODO: ADD RETURNED DATA HERE
     """
     # verify user
-    
+
     was_successful, session_token = extract_token(request)
-    
+
     if not was_successful:
         return session_token
-    
+
     user = users_dao.get_user_by_session_token(session_token)
     if not user or not user.verify_session_token(session_token):
         return failure_response("Invalid session token")
-    
+
     # create playlist
-        
+
     body = json.loads(request.data)
     hours = body.get("hours")
     minutes = body.get("minutes")
-    
+
     if hours is None or minutes is None:
         return failure_response("Request body is missing hours or minutes")
+
+    pass
+
+
+@app.route("/tempo/playlist/<playlist_id>/")
+def get_songs_in_playlist(playlist_id):
+    """
+    Endpoint for getting a list of songs in a playlist by the playlist's id.\n
+    No request body. \n
+    Returns: TODO \n
+    """
+    #TODO: Zaeda
+    pass
+
+
+@app.route("/tempo/playlist/<playlist_id>/favorite/", methods=["POST"])
+def make_favorite(playlist_id):
+    """
+    Endpoint for "favoriting a playlist" by adding playlist (by id) to playlists table. \n
+    No request body. \n
+    Returns: TODO \n
+    """
+    #TODO: Zaeda  
+    pass
     
+
+@app.route("/tempo/playlist/<playlist_id>/edit/", methods=["POST"])
+def edit_playlist_name(playlist_id):
+    """
+    Endpoint for editing name of a favorited playlist by playlist's id. \n
+    Request body: \n
+    \t- title: new title for the playlist \n
+    Returns: TODO \n
+    """
+    #TODO: Zaeda
+    pass
+    
+
+
+@app.route("/tempo/playlist/<playlist_id>/", methods=["DELETE"])
+def delete_playlist(playlist_id):
+    """
+    Endpoint for deleting a playlist by id. \n
+    No request body. \n
+    Returns: TODO \n
+    """
+    #TODO: Zaeda
     pass
 
 # ------------- RUN APP -------------
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
