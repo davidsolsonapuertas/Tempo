@@ -85,36 +85,51 @@ def create_new_playlist():
 
 
 @app.route("/tempo/playlist/<playlist_id>/")
-def get_songs_in_playlist(playlist_id):
+def get_playlist_songs(playlist_id):
     """
-    Endpoint for getting a list of songs in a playlist by the playlist's id.\n
-    No request body. \n
-    Returns: TODO \n
+    Endpoint for getting a list of songs in a playlist using the playlist's id.
+
+    Args: 
+        playlist_id (int): id of the playlist
+    
+    No request body.
+    
+    Returns: TODO 
     """
-    #TODO: Zaeda
+    #TODO
     pass
 
 
 @app.route("/tempo/playlist/<playlist_id>/favorite/", methods=["POST"])
 def make_favorite(playlist_id):
     """
-    Endpoint for "favoriting a playlist" by adding playlist (by id) to playlists table. \n
-    No request body. \n
-    Returns: TODO \n
+    Endpoint for "favoriting a playlist" by adding playlist (using id) to playlists table. 
+    
+    Args: 
+        playlist_id (int): id of the playlist
+
+    No request body. 
+    
+    Returns: TODO 
     """
-    #TODO: Zaeda  
+    #TODO 
     pass
     
 
 @app.route("/tempo/playlist/<playlist_id>/edit/", methods=["POST"])
 def edit_playlist_name(playlist_id):
     """
-    Endpoint for editing name of a favorited playlist by playlist's id. \n
-    Request body: \n
-    \t- title: new title for the playlist \n
-    Returns: TODO \n
+    Endpoint for editing name of a favorited playlist by playlist's id. 
+    
+    Args: 
+        playlist_id (int): id of the playlist
+
+    Request body: 
+        title: new title for the playlist 
+    
+    Returns: TODO 
     """
-    #TODO: Zaeda
+    #TODO
     pass
     
 
@@ -122,11 +137,16 @@ def edit_playlist_name(playlist_id):
 @app.route("/tempo/playlist/<playlist_id>/", methods=["DELETE"])
 def delete_playlist(playlist_id):
     """
-    Endpoint for deleting a playlist by id. \n
-    No request body. \n
-    Returns: TODO \n
+    Endpoint for deleting a playlist by id. 
+    
+    Args: 
+        playlist_id (int): id of the playlist
+
+    No request body. 
+    
+    Returns: TODO 
     """
-    #TODO: Zaeda
+    #TODO
     pass
 
 # ------------- RUN APP -------------
