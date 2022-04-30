@@ -84,6 +84,45 @@ def create_new_playlist():
     
     pass
 
+@app.route("/tempo/login/",methods=["POST"])
+def store_user_token():
+    """
+    Endpoint for storing Sptofiy session tokens for user 
+    """
+    #TODO
+    pass
+
+
+
+
+
+@app.route("/tempo/<int:user_id>/",methods=["GET"])
+def get_user_token(user_id):
+    """
+    Endpoint for returning token associated with the user
+    """
+    was_successful, session_token = extract_token(request)
+
+    if not was_successful:
+        return session_token 
+
+    user = users_dao.get_user_by_session_token(session_token)
+    if not user or not user.verify_session_token(session_token):
+        return failure_response("Invalid session token")
+    
+    return success_response(
+        {"message": "You have successfully implemented sessions!"}
+        ) 
+
+
+@app.route("/tempo/playlist/",methods=["GET"])
+def get_favorite_playlist_songs():
+    """
+    Endpoint for getting all previously favorited songs from database
+    """
+    pass
+
+
 # ------------- RUN APP -------------
 
 if __name__ == "__main__":
