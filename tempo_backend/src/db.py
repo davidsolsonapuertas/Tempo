@@ -2,7 +2,7 @@ import datetime
 import hashlib
 import os
 import bcrypt
-from sqlalchemy import null
+from sqlalchemy import null, delete
 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -51,6 +51,18 @@ class User(db.Model):
         self.session_expiration = kwargs.get("session_expiration")
         self.update_token = kwargs.get("update_token")
         self.renew_session()
+
+    def serialize(self):
+        """
+        Serialize User object, includes all object fields
+        """
+        return {
+            "id": self.id,
+            "username": self.username,
+            "session_token": self.session_token,
+            "session_expiration": self.session_expiration,
+            "playlists": [p.simple_serialize() for p in self.playlists]
+        }
 
     def renew_session(self):
         """
@@ -126,6 +138,38 @@ class Playlist(db.Model):
         self.history = kwargs.get("history")
         self.user_id = kwargs.get("user_id")
 
+    def serialize(self):
+        """
+        Serialize a Playlist object's fields. 
+        TODO: add songs field
+        """
+        return {
+            "id": self.id,
+            "sum_length": self.sum_length,
+            "title": self.title,
+            "history": self.history
+        }
+
+
+    def simple_serialize(self):
+        """
+        Serialize a Playlist object's fields, excludes user_id and songs fields.
+        """
+        return {
+            "id": self.id,
+            "sum_length": self.sum_length,
+            "title": self.title,
+            "history": self.history
+        }
+
+    def songs_serialize(self):
+        """
+        Serialize a Playlist object's songs in songs field.
+        """
+        return {
+            "songs": [s.simple_serialize() for s in self.songs]
+        }
+
 
 class Song(db.Model):
     """
@@ -154,3 +198,13 @@ class Song(db.Model):
         """
         self.spotify_id = kwargs.get("spotify_id")
         self.playlist_id = kwargs.get("playlist_id")
+
+
+    def simple_serialize(self):
+        """
+        Serialize a Song object's fields: id, spotify_id.
+        """
+        return {
+            "id": self.id,
+            "spotify_id": self.spotify_id
+        }

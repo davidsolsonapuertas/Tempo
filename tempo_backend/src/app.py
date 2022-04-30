@@ -3,6 +3,9 @@ import users_dao
 import datetime
 
 from db import db
+from db import User
+from db import Playlist
+from db import Song
 from flask import Flask, request
 
 db_filename = "auth.db"
@@ -83,6 +86,14 @@ def create_new_playlist():
 
     pass
 
+@app.route("/tempo/playlist/")
+def get_playlists():
+    """
+    Endpoint for getting all favorited playlists.
+
+    """
+    #TODO: what does this do?? come back later
+    pass
 
 @app.route("/tempo/playlist/<playlist_id>/")
 def get_playlist_songs(playlist_id):
@@ -91,63 +102,76 @@ def get_playlist_songs(playlist_id):
 
     Args: 
         playlist_id (int): id of the playlist
-    
+
     No request body.
-    
+
     Returns: TODO 
     """
-    #TODO
-    pass
+    playlist = Playlist.query.filter_by(id=playlist_id).first()
+    if playlist is None:
+        return failure_response("Playlist was not found!", 404)
+
+    return success_response(playlist.songs_serialize())
 
 
 @app.route("/tempo/playlist/<playlist_id>/favorite/", methods=["POST"])
 def make_favorite(playlist_id):
     """
     Endpoint for "favoriting a playlist" by adding playlist (using id) to playlists table. 
-    
+
     Args: 
         playlist_id (int): id of the playlist
 
     No request body. 
-    
+
     Returns: TODO 
     """
-    #TODO 
+    # TODO: what does this do?? come back later
     pass
-    
+
 
 @app.route("/tempo/playlist/<playlist_id>/edit/", methods=["POST"])
 def edit_playlist_name(playlist_id):
     """
     Endpoint for editing name of a favorited playlist by playlist's id. 
-    
+
     Args: 
         playlist_id (int): id of the playlist
 
     Request body: 
         title: new title for the playlist 
-    
+
     Returns: TODO 
     """
-    #TODO
-    pass
-    
+    playlist = playlist = Playlist.query.filter_by(id=playlist_id).first()
+    if playlist is None:
+        return failure_response("Playlist was not found!", 404)
+
+    body = json.loads(request.data)
+    playlist.title = body["title"]
+    db.session.commit()
+    return success_response(playlist.serialize(), 201)
 
 
 @app.route("/tempo/playlist/<playlist_id>/", methods=["DELETE"])
 def delete_playlist(playlist_id):
     """
     Endpoint for deleting a playlist by id. 
-    
+
     Args: 
         playlist_id (int): id of the playlist
 
     No request body. 
-    
+
     Returns: TODO 
     """
-    #TODO
-    pass
+    playlist = Playlist.query.filter_by(id=playlist_id).first()
+    if playlist is None:
+        return failure_response("Playlist was not found!", 404)
+   
+    db.session.delete(playlist)
+    db.session.commit()
+    return success_response("Playlist deleted")
 
 # ------------- RUN APP -------------
 
