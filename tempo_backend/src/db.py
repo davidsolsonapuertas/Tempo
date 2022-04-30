@@ -57,21 +57,23 @@ class User(db.Model):
         TODO
         Renews the sessions of the user
         """
-        pass
+        self.session_token = self._urlsafe_base_64()
+        self.session_expiration = datetime.datetime.now() + datetime.timedelta(days=1)
+        self.update_token = self._urlsafe_base_64()
 
     def verify_session_token(self, session_token):
         """
         TODO
         Verifies the session token of a user
         """
-        pass
+        return session_token == self.session_token and datetime.datetime.now() < self.session_expiration
 
     def verify_update_token(self, update_token):
         """
         TODO
         Verifies the update token of a user
         """
-        pass
+        return update_token == self.update_token
 
 
 class Playlist(db.Model):
