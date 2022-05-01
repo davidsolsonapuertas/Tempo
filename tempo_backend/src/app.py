@@ -4,6 +4,7 @@ import datetime
 
 from db import db
 from flask import Flask, request
+from db import User
 
 db_filename = "auth.db"
 app = Flask(__name__)
@@ -82,15 +83,34 @@ def create_new_playlist():
     if hours is None or minutes is None:
         return failure_response("Request body is missing hours or minutes")
     
-    pass
 
 @app.route("/tempo/login/",methods=["POST"])
 def store_user_token():
     """
-    Endpoint for storing Sptofiy session tokens for user 
+    Endpoint for storing Spotify session tokens for user 
+
+    This function takes in the user's username and adds it to the database if the 
+    user does not already exist in there. The user's session_token, session_expiration,
+    and update_token are all returned
     """
-    #TODO
-    pass
+    body = json.loads(request.data)
+    username = body.get("username")
+
+    if username is None:
+        return failure_response("Missing username")
+
+    was_successful, user = users_dao.create_user(username)
+
+    if not was_successful:
+        return failure_response("User already exists")
+
+    return success_response(
+        {
+            "session_token":user.session_token,
+            "session_expiration":str(user.session_expiration),
+            "update_token": user.update_token
+        },201
+    )
 
 
 
@@ -101,18 +121,14 @@ def get_user_token(user_id):
     """
     Endpoint for returning token associated with the user
     """
-    was_successful, session_token = extract_token(request)
 
-    if not was_successful:
-        return session_token 
+    user = User.query.filter_by(id=user_id).first()
+    if user is None:
+        return failure_response("User not found!")
 
-    user = users_dao.get_user_by_session_token(session_token)
-    if not user or not user.verify_session_token(session_token):
-        return failure_response("Invalid session token")
-    
-    return success_response(
-        {"message": "You have successfully implemented sessions!"}
-        ) 
+    tok=user.session_token
+
+    return tok
 
 
 @app.route("/tempo/playlist/",methods=["GET"])
@@ -120,8 +136,8 @@ def get_favorite_playlist_songs():
     """
     Endpoint for getting all previously favorited songs from database
     """
+    #return success_response({"playlists":[p.serialize() for p in Playlist.query.all()]})
     pass
-
 
 # ------------- RUN APP -------------
 

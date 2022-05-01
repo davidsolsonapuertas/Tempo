@@ -45,4 +45,20 @@ def renew_session(update_token):
 
     return user
 
+def create_user(username):
+    """
+    Creates a User object in the database
 
+    If the creation was successful, User object is added to the database
+    """
+
+    potential_user=get_user_by_username(username)
+
+    #If a user already exists
+    if potential_user is not None:
+        return False, potential_user
+
+    user=User(username=username)
+    db.session.add(user)
+    db.session.commit()
+    return True, user

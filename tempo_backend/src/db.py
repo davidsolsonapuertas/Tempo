@@ -52,6 +52,27 @@ class User(db.Model):
         self.update_token = kwargs.get("update_token")
         self.renew_session()
 
+    def serialize(self):
+        """
+        Serialize User object
+        """
+        return {
+            "id": self.id,
+            "username": self.username,
+            "session_token": self.session_token,
+            "session_expiration": self.session_expiration,
+            "playlists": [p.simple_serialize() for p in self.playlists]
+        }
+
+
+    def _urlsafe_base_64(self):
+        """
+        Randomly generates hashed tokens (used for session/update tokens)
+        """
+        return hashlib.sha1(os.urandom(64)).hexdigest()
+
+
+
     def renew_session(self):
         """
         TODO
