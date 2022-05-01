@@ -1,6 +1,7 @@
 import json
 import users_dao
 import datetime
+import requests
 
 from db import db
 from flask import Flask, request
@@ -31,9 +32,8 @@ def failure_response(message, code=404):
     """
     return json.dumps({"error": message}), code
 
+
 # helper for managing tokens
-
-
 def extract_token(request):
     """
     Helper function that extracts the token from the header of a request
@@ -54,10 +54,10 @@ def extract_token(request):
 @app.route("/tempo/playlist/", methods=["POST"])
 def create_new_playlist():
     """
-    Endpoint for creating a new playlist from Spotify with specified length
+    Endpoint for creating a new playlist from Spotify with specified playtime
 
     Returns:
-        list: List of tracks with total playtime of specified length
+        json: JSON containing list of tracks with total playtime of specified length
     """
 
     # verify user
@@ -68,9 +68,8 @@ def create_new_playlist():
         return session_token
 
     user = users_dao.get_user_by_session_token(session_token)
-    # TODO: if statment to check for invalid session tokens
-    if not user or True:
-        return failure_response("Invalid session token")
+    if not user:
+        return failure_response("User not found")
 
     # create playlist
 
@@ -79,20 +78,87 @@ def create_new_playlist():
     minutes = body.get("minutes")
 
     if hours is None or minutes is None:
-        return failure_response("Request body is missing hours or minutes")
+        return failure_response("Request body is missing hours or minutes", 400)
 
-    # * pseudocode for creating a playlist w/ given length
-    """
-    int length = int(hours)*60 + int(minutes)
-    get recommended tracks request: 
-        # of tracks = 100
-        max length of track = length
-    recommended = list of recommended tracks from Spotify
-    playlist = findTracklistSum(recommended, length)
-    return playlist as json list of tracks (or whatever FE needs to get the song from Spotify)
-    """
+    playtime_sec = int(hours)*60*60 + int(minutes)*60
+    
+    top_artists_response = request.get(
+        "https://api.spotify.com/v1/me/top/type/artists",
+        headers={
+            "Content-type": "application/json",
+            "Authorization": "Bearer " + session_token
+        },
+        data={
+            "limit": 5
+        }
+    ).json()
+    if not top_artists_response["error"] is None:
+        return failure_response(top_artists_response["error"]["message"], top_artists_response["error"]["status"])
+    
+    top_genre_response = request.get(
+        "https://api.spotify.com/v1/recommendations/available-genre-seeds",
+        headers={
+            "Content-type": "application/json",
+            "Authorization": "Bearer " + session_token
+        }
+    ).json()
+    if not top_genre_response["error"] is None:
+        return failure_response(top_genre_response["error"]["message"], top_genre_response["error"]["status"])
 
-    pass
+    top_tracks_response = request.get(
+        "https://api.spotify.com/v1/me/top/type/tracks",
+        headers={
+            "Content-type": "application/json",
+            "Authorization": "Bearer " + session_token
+        },
+        data={
+            "limit": 5
+        }
+    ).json()    
+    if not top_tracks_response["error"] is None:
+        return failure_response(top_tracks_response["error"]["message"], top_tracks_response["error"]["status"])
+    
+    top_artists_list = top_artists_response["items"]
+    top_genre_list = top_genre_response["genres"]
+    top_tracks_list = top_tracks_response["items"]
+    
+    seed_artists = ""
+    for i in range(len(top_artists_list)):
+        seed_artists += top_artists_list[i]["id"]
+        if i < 4:
+            seed_artists += ","
+
+    seed_genres = ""
+    for i in range(len(top_genre_list)):
+        seed_genres += top_genre_list[i]
+        if i < 4:
+            seed_genres += ","
+
+    seed_tracks = ""
+    for i in range(len(top_tracks_list)):
+        seed_tracks += top_tracks_list[i]["id"]
+        if i < 4:
+            seed_tracks += ","
+
+    recommendations_response = request.get(
+        "https://api.spotify.com/v1/recommendations",
+        headers={
+            "Content-type": "application/json",
+            "Authorization": "Bearer " + session_token
+        },
+        data={
+            "seed_artists": seed_artists,
+            "seed_genres": seed_genres,
+            "seed_tracks": seed_tracks,
+            "limit": int(playtime_sec/60)
+        }
+    ).json()
+    if not recommendations_response["error"] is None:
+        return failure_response(recommendations_response["error"]["message"], recommendations_response["error"]["status"])
+
+    playlist = find_tracklist_sum(recommendations_response["tracks"], playtime_sec)
+    
+    return success_response({"tracks": playlist})
 
 
 def find_tracklist_sum(tracklist, sum, increment_fuzzy=60):
@@ -112,7 +178,7 @@ def find_tracklist_sum(tracklist, sum, increment_fuzzy=60):
     while len(playlist) == 0:
         playlist = find_tracklist_sum_helper(
             tracklist, len(tracklist), sum, fuzzy)
-        increment_fuzzy += 60
+        fuzzy += increment_fuzzy
 
     return playlist
 
