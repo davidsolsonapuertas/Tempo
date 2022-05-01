@@ -5,7 +5,7 @@ import datetime
 from db import db
 from db import User
 from db import Playlist
-from db import Song
+from db import Track
 from flask import Flask, request
 
 db_filename = "auth.db"
@@ -92,43 +92,72 @@ def get_playlists():
     Endpoint for getting all favorited playlists.
 
     """
-    #TODO: what does this do?? come back later
-    pass
+    return success_response({"playlists": [p.simple_serialize() for p in Playlist.query.all()]})
 
 @app.route("/tempo/playlist/<playlist_id>/")
-def get_playlist_songs(playlist_id):
+def get_playlist_tracks(playlist_id):
     """
-    Endpoint for getting a list of songs in a playlist using the playlist's id.
+    Endpoint for getting a list of tracks in a playlist using the playlist's id.
 
     Args: 
         playlist_id (int): id of the playlist
 
     No request body.
 
-    Returns: TODO 
+    Returns: json of list of tracks (see api)
     """
     playlist = Playlist.query.filter_by(id=playlist_id).first()
     if playlist is None:
         return failure_response("Playlist was not found!", 404)
 
-    return success_response(playlist.songs_serialize())
+    return success_response(playlist.tracks_serialize())
 
 
-@app.route("/tempo/playlist/<playlist_id>/favorite/", methods=["POST"])
-def make_favorite(playlist_id):
+@app.route("/tempo/playlist/<user_id>/favorite/", methods=["POST"])
+def make_favorite(user_id):
     """
-    Endpoint for "favoriting a playlist" by adding playlist (using id) to playlists table. 
+    Endpoint for "favoriting a playlist" by adding playlist for user (using user_id) 
+    to playlists table. 
 
     Args: 
         playlist_id (int): id of the playlist
 
-    No request body. 
+    Request body: 
+    {
+        "tracks": [
+            <spotify_id> (string),
+		    <spotify_id> (string), 
+		    …
+        ]
+    }
 
     Returns: TODO 
     """
-    # TODO: what does this do?? come back later
-    pass
+    body = json.loads(request.data)
+    if body is None:
+        return failure_response("Must include request body.", 400)
+    track_ids = body.get("tracks")
+    length = body.get("length")
+    if (track_ids is None) or (length is None):
+        return failure_response("Must include tracks and length in request body.", 400)
 
+    favorite_playlist = Playlist(
+        sum_length=length, 
+        title="Untitled Playlist", 
+        history=None, 
+        user_id=user_id)
+    db.session.add(favorite_playlist)
+
+    # add tracks from body to tracks table, which adds them to playlist's col
+    for t in track_ids:
+        track = Track(
+            spotify_id=t,
+            playlist_id=favorite_playlist.id
+        )
+        db.session.add(track)
+    
+    db.session.commit()
+    return success_response(favorite_playlist.simple_serialize(), 201)
 
 @app.route("/tempo/playlist/<playlist_id>/edit/", methods=["POST"])
 def edit_playlist_name(playlist_id):
@@ -141,7 +170,7 @@ def edit_playlist_name(playlist_id):
     Request body: 
         title: new title for the playlist 
 
-    Returns: TODO 
+    Returns: returns json of updated playlist (see api) 
     """
     playlist = playlist = Playlist.query.filter_by(id=playlist_id).first()
     if playlist is None:
@@ -163,7 +192,7 @@ def delete_playlist(playlist_id):
 
     No request body. 
 
-    Returns: TODO 
+    Returns: returns success message 
     """
     playlist = Playlist.query.filter_by(id=playlist_id).first()
     if playlist is None:
