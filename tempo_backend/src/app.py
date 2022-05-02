@@ -61,9 +61,9 @@ def create_new_playlist():
 
     Returns:
         json: JSON containing list of tracks with total playtime of specified length.
-        
+
         The returned JSON is the same as the one listed on Spotify's API for getting several tracks at once:
-            
+
         https://developer.spotify.com/documentation/web-api/reference/#/operations/get-several-tracks
     """
 
@@ -89,7 +89,7 @@ def create_new_playlist():
 
     playtime_sec = int(hours)*60*60 + int(minutes)*60
 
-    top_artists_response = request.get(
+    top_artists_response = requests.get(
         "https://api.spotify.com/v1/me/top/type/artists",
         headers={
             "Content-type": "application/json",
@@ -102,7 +102,7 @@ def create_new_playlist():
     if not top_artists_response["error"] is None:
         return failure_response(top_artists_response["error"]["message"], top_artists_response["error"]["status"])
 
-    top_genre_response = request.get(
+    top_genre_response = requests.get(
         "https://api.spotify.com/v1/recommendations/available-genre-seeds",
         headers={
             "Content-type": "application/json",
@@ -112,7 +112,7 @@ def create_new_playlist():
     if not top_genre_response["error"] is None:
         return failure_response(top_genre_response["error"]["message"], top_genre_response["error"]["status"])
 
-    top_tracks_response = request.get(
+    top_tracks_response = requests.get(
         "https://api.spotify.com/v1/me/top/type/tracks",
         headers={
             "Content-type": "application/json",
@@ -147,7 +147,7 @@ def create_new_playlist():
         if i < 4:
             seed_tracks += ","
 
-    recommendations_response = request.get(
+    recommendations_response = requests.get(
         "https://api.spotify.com/v1/recommendations",
         headers={
             "Content-type": "application/json",
