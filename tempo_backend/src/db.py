@@ -54,7 +54,7 @@ class User(db.Model):
 
     def serialize(self):
         """
-        Serialize User object
+        Serialize User object, includes all object fields
         """
         return {
             "id": self.id,
@@ -63,7 +63,6 @@ class User(db.Model):
             "session_expiration": self.session_expiration,
             "playlists": [p.simple_serialize() for p in self.playlists]
         }
-
 
     def _urlsafe_base_64(self):
         """
@@ -97,6 +96,7 @@ class User(db.Model):
         return update_token == self.update_token
 
 
+
 class Playlist(db.Model):
     """
     Playlist model
@@ -108,7 +108,7 @@ class Playlist(db.Model):
 
     # playlist information
     sum_length = db.Column(db.Integer, nullable=False)
-    """Total sum. length of songs in playlist"""
+    """Total sum. length of tracks in playlist"""
 
     title = db.Column(db.String, nullable=False)
     """
@@ -128,18 +128,18 @@ class Playlist(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     """Playlist model has many-to-1 relationship with User model"""
 
-    songs = db.relationship(
-        "Song",
+    tracks = db.relationship(
+        "Track",
         cascade="delete"
     )
-    """Playlist model has 1-to-many relationship with Song model"""
+    """Playlist model has 1-to-many relationship with Track model"""
 
     def __init__(self, **kwargs):
         """
         Initializes a Playlist object
         
         kwargs:
-            sum_length (int): Total sum. length of songs in playlist
+            sum_length (int): Total sum. length of tracks in playlist
             title (str): Title of playlist, "" if playlist is not favorited
             history (Datetime): Datetime when the playlist was last played, null if playlist was never played before
             user_id (int): User id that Playlist belongs to
@@ -149,31 +149,72 @@ class Playlist(db.Model):
         self.history = kwargs.get("history")
         self.user_id = kwargs.get("user_id")
 
+    def serialize(self):
+        """
+        Serialize a Playlist object's fields. 
+        """
+        return {
+            "id": self.id,
+            "sum_length": self.sum_length,
+            "title": self.title,
+            "history": self.history, 
+            "tracks": [t.simple_serialize() for t in self.tracks]
+        }
 
-class Song(db.Model):
+
+    def simple_serialize(self):
+        """
+        Serialize a Playlist object's fields, excludes user_id and tracks fields.
+        """
+        return {
+            "id": self.id,
+            "sum_length": self.sum_length,
+            "title": self.title,
+            "history": self.history
+        }
+
+    def tracks_serialize(self):
+        """
+        Serialize all Playlist object's tracks in track field.
+        """
+        return {
+            "tracks": [s.simple_serialize() for s in self.tracks]
+        }
+
+
+class Track(db.Model):
     """
-    Song model    
+    Track model    
     
     Has many-to-1 relationship with Playlist model
     """
-    __tablename__ = 'songs'
+    __tablename__ = 'tracks'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
-    # song information
+    # track information
     spotify_id = db.Column(db.String, nullable=False)
 
     # association information
     playlist_id = db.Column(db.Integer, db.ForeignKey(
         "playlists.id"), nullable=False)
-    """Song model has many-to-1 relationship with Playlist model"""
+    """Track model has many-to-1 relationship with Playlist model"""
 
     def __init__(self, **kwargs):
         """
         Initializes a Playlist object
         
         kwargs:
-            spotify_id (str) = Spotify id of song
-            playlist_id (int) = Playlist that Song belongs to
+            spotify_id (str) = Spotify id of track
+            playlist_id (int) = Playlist that Track belongs to
         """
         self.spotify_id = kwargs.get("spotify_id")
         self.playlist_id = kwargs.get("playlist_id")
+
+
+    def simple_serialize(self):
+        """
+        Serialize a Track object's fields: id, spotify_id.
+        """
+        return {
+            "spotify_id": self.spotify_id
+        }
