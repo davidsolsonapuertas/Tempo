@@ -60,7 +60,11 @@ def create_new_playlist():
     Endpoint for creating a new playlist from Spotify with specified playtime
 
     Returns:
-        json: JSON containing list of tracks with total playtime of specified length
+        json: JSON containing list of tracks with total playtime of specified length.
+        
+        The returned JSON is the same as the one listed on Spotify's API for getting several tracks at once:
+            
+        https://developer.spotify.com/documentation/web-api/reference/#/operations/get-several-tracks
     """
 
     # verify user
@@ -84,7 +88,7 @@ def create_new_playlist():
         return failure_response("Request body is missing hours or minutes", 400)
 
     playtime_sec = int(hours)*60*60 + int(minutes)*60
-    
+
     top_artists_response = request.get(
         "https://api.spotify.com/v1/me/top/type/artists",
         headers={
@@ -97,7 +101,7 @@ def create_new_playlist():
     ).json()
     if not top_artists_response["error"] is None:
         return failure_response(top_artists_response["error"]["message"], top_artists_response["error"]["status"])
-    
+
     top_genre_response = request.get(
         "https://api.spotify.com/v1/recommendations/available-genre-seeds",
         headers={
@@ -117,14 +121,14 @@ def create_new_playlist():
         data={
             "limit": 5
         }
-    ).json()    
+    ).json()
     if not top_tracks_response["error"] is None:
         return failure_response(top_tracks_response["error"]["message"], top_tracks_response["error"]["status"])
-    
+
     top_artists_list = top_artists_response["items"]
     top_genre_list = top_genre_response["genres"]
     top_tracks_list = top_tracks_response["items"]
-    
+
     seed_artists = ""
     for i in range(len(top_artists_list)):
         seed_artists += top_artists_list[i]["id"]
@@ -159,8 +163,9 @@ def create_new_playlist():
     if not recommendations_response["error"] is None:
         return failure_response(recommendations_response["error"]["message"], recommendations_response["error"]["status"])
 
-    playlist = find_tracklist_sum(recommendations_response["tracks"], playtime_sec)
-    
+    playlist = find_tracklist_sum(
+        recommendations_response["tracks"], playtime_sec)
+
     return success_response({"tracks": playlist})
 
 
@@ -230,6 +235,7 @@ def get_playlists():
     """
     return success_response({"playlists": [p.simple_serialize() for p in Playlist.query.all()]})
 
+
 @app.route("/tempo/playlist/<playlist_id>/")
 def get_playlist_tracks(playlist_id):
     """
@@ -262,8 +268,8 @@ def make_favorite(user_id):
     {
         "tracks": [
             <spotify_id> (string),
-		    <spotify_id> (string), 
-		    …
+                    <spotify_id> (string), 
+                    …
         ]
     }
 
@@ -278,9 +284,9 @@ def make_favorite(user_id):
         return failure_response("Must include tracks and length in request body.", 400)
 
     favorite_playlist = Playlist(
-        sum_length=length, 
-        title="Untitled Playlist", 
-        history=None, 
+        sum_length=length,
+        title="Untitled Playlist",
+        history=None,
         user_id=user_id)
     db.session.add(favorite_playlist)
 
@@ -291,9 +297,10 @@ def make_favorite(user_id):
             playlist_id=favorite_playlist.id
         )
         db.session.add(track)
-    
+
     db.session.commit()
     return success_response(favorite_playlist.simple_serialize(), 201)
+
 
 @app.route("/tempo/playlist/<playlist_id>/edit/", methods=["POST"])
 def edit_playlist_name(playlist_id):
@@ -333,10 +340,11 @@ def delete_playlist(playlist_id):
     playlist = Playlist.query.filter_by(id=playlist_id).first()
     if playlist is None:
         return failure_response("Playlist was not found!", 404)
-   
+
     db.session.delete(playlist)
     db.session.commit()
     return success_response("Playlist deleted")
+
 
 # ------------- RUN APP -------------
 if __name__ == "__main__":
