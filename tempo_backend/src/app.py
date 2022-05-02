@@ -122,16 +122,9 @@ def make_favorite(user_id):
     Args: 
         playlist_id (int): id of the playlist
 
-    Request body: 
-    {
-        "tracks": [
-            <spotify_id> (string),
-		    <spotify_id> (string), 
-		    …
-        ]
-    }
+    Request body: json of a dictionary of track ids (see api)
 
-    Returns: TODO 
+    Returns: new favorited playlist as json
     """
     body = json.loads(request.data)
     if body is None:
