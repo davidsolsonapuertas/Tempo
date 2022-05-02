@@ -55,6 +55,16 @@ def extract_token(request):
 # ------------- ROUTES -------------
 
 @app.route("/")
+def hello_world():
+    """
+    Endpoint for hello world
+
+    Returns:
+        json: JSON with value "Hello world!"
+    """
+    return success_response("Hello world!")
+
+
 @app.route("/tempo/playlist/", methods=["POST"])
 def create_new_playlist():
     """
@@ -86,11 +96,10 @@ def create_new_playlist():
     minutes = body.get("minutes")
 
     if hours is None or minutes is None:
-<<<<<<< HEAD
         return failure_response("Request body is missing hours or minutes")
-    
 
-@app.route("/tempo/login/",methods=["POST"])
+
+@app.route("/tempo/login/", methods=["POST"])
 def store_user_token():
     """
     Endpoint for storing Spotify session tokens for user 
@@ -112,17 +121,14 @@ def store_user_token():
 
     return success_response(
         {
-            "session_token":user.session_token,
-            "session_expiration":str(user.session_expiration),
+            "session_token": user.session_token,
+            "session_expiration": str(user.session_expiration),
             "update_token": user.update_token
-        },201
+        }, 201
     )
 
 
-
-
-
-@app.route("/tempo/<int:user_id>/",methods=["GET"])
+@app.route("/tempo/<int:user_id>/", methods=["GET"])
 def get_user_token(user_id):
     """
     Endpoint for returning token associated with the user
@@ -132,18 +138,40 @@ def get_user_token(user_id):
     if user is None:
         return failure_response("User not found!")
 
-    tok=user.session_token
+    tok = user.session_token
 
     return tok
 
 
-@app.route("/tempo/playlist/",methods=["GET"])
-def get_favorite_playlist_songs():
+@app.route("/tempo/playlist/", methods=["POST"])
+def create_new_playlist():
     """
-    Endpoint for getting all previously favorited songs from database
+    Endpoint for creating a new playlist from Spotify with specified playtime
+    Returns:
+        json: JSON containing list of tracks with total playtime of specified length.
+
+        The returned JSON is the same as the one listed on Spotify's API for getting several tracks at once:
+        https://developer.spotify.com/documentation/web-api/reference/#/operations/get-several-tracks
     """
-    return success_response({"playlists": [p.simple_serialize() for p in Playlist.query.all()]})
-=======
+
+    # verify user
+
+    was_successful, session_token = extract_token(request)
+
+    if not was_successful:
+        return session_token
+
+    user = users_dao.get_user_by_session_token(session_token)
+    if not user:
+        return failure_response("User not found")
+
+    # create playlist
+
+    body = json.loads(request.data)
+    hours = body.get("hours")
+    minutes = body.get("minutes")
+
+    if hours is None or minutes is None:
         return failure_response("Request body is missing hours or minutes", 400)
 
     playtime_sec = int(hours)*60*60 + int(minutes)*60
@@ -323,18 +351,14 @@ def make_favorite(user_id):
     Args: 
         playlist_id (int): id of the playlist
 
-<<<<<<< HEAD
-    Request body: json of a dictionary of track ids (see api)
-=======
     Request body: 
     {
         "tracks": [
             <spotify_id> (string),
-                    <spotify_id> (string), 
-                    …
+            <spotify_id> (string), 
+            ...
         ]
     }
->>>>>>> d0b9f3495461d3189c9b2e7f5c102a191614a97f
 
     Returns: new favorited playlist as json
     """
@@ -408,7 +432,6 @@ def delete_playlist(playlist_id):
     db.session.commit()
     return success_response("Playlist deleted")
 
->>>>>>> 8400b17acba32dd1df16450a5ce943ec5d50bba4
 
 # ------------- RUN APP -------------
 if __name__ == "__main__":

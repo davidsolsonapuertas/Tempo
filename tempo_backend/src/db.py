@@ -14,7 +14,7 @@ db = SQLAlchemy()
 class User(db.Model):
     """
     User model
-    
+
     Has 1-to-many relationship with Playlist model
     """
     __tablename__ = 'users'
@@ -39,7 +39,7 @@ class User(db.Model):
     def __init__(self, **kwargs):
         """
         Initializes a User object
-        
+
         kwargs:
             username (str): Username of Spotify user
             session_token (str): Session token of Spotify user
@@ -64,20 +64,14 @@ class User(db.Model):
             "playlists": [p.simple_serialize() for p in self.playlists]
         }
 
-<<<<<<< HEAD
     def _urlsafe_base_64(self):
         """
         Randomly generates hashed tokens (used for session/update tokens)
         """
         return hashlib.sha1(os.urandom(64)).hexdigest()
 
-
-
-=======
->>>>>>> 8400b17acba32dd1df16450a5ce943ec5d50bba4
     def renew_session(self):
         """
-        TODO
         Renews the sessions of the user
         """
         self.session_token = self._urlsafe_base_64()
@@ -86,24 +80,21 @@ class User(db.Model):
 
     def verify_session_token(self, session_token):
         """
-        TODO
         Verifies the session token of a user
         """
         return session_token == self.session_token and datetime.datetime.now() < self.session_expiration
 
     def verify_update_token(self, update_token):
         """
-        TODO
         Verifies the update token of a user
         """
         return update_token == self.update_token
 
 
-
 class Playlist(db.Model):
     """
     Playlist model
-    
+
     Has many-to-1 relationship with User model
     """
     __tablename__ = 'playlists'
@@ -140,7 +131,7 @@ class Playlist(db.Model):
     def __init__(self, **kwargs):
         """
         Initializes a Playlist object
-        
+
         kwargs:
             sum_length (int): Total sum. length of tracks in playlist
             title (str): Title of playlist, "" if playlist is not favorited
@@ -160,10 +151,9 @@ class Playlist(db.Model):
             "id": self.id,
             "sum_length": self.sum_length,
             "title": self.title,
-            "history": self.history, 
+            "history": self.history,
             "tracks": [t.simple_serialize() for t in self.tracks]
         }
-
 
     def simple_serialize(self):
         """
@@ -188,7 +178,7 @@ class Playlist(db.Model):
 class Track(db.Model):
     """
     Track model    
-    
+
     Has many-to-1 relationship with Playlist model
     """
     __tablename__ = 'tracks'
@@ -205,14 +195,13 @@ class Track(db.Model):
     def __init__(self, **kwargs):
         """
         Initializes a Playlist object
-        
+
         kwargs:
             spotify_id (str) = Spotify id of track
             playlist_id (int) = Playlist that Track belongs to
         """
         self.spotify_id = kwargs.get("spotify_id")
         self.playlist_id = kwargs.get("playlist_id")
-
 
     def simple_serialize(self):
         """
