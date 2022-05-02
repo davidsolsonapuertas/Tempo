@@ -136,8 +136,7 @@ def get_favorite_playlist_songs():
     """
     Endpoint for getting all previously favorited songs from database
     """
-    #return success_response({"playlists":[p.serialize() for p in Playlist.query.all()]})
-    pass
+    return success_response({"playlists": [p.simple_serialize() for p in Playlist.query.all()]})
 
 # ------------- RUN APP -------------
 
