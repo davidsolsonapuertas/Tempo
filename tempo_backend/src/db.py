@@ -2,7 +2,7 @@ import datetime
 import hashlib
 import os
 import bcrypt
-from sqlalchemy import null
+from sqlalchemy import null, delete
 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -64,6 +64,7 @@ class User(db.Model):
             "playlists": [p.simple_serialize() for p in self.playlists]
         }
 
+<<<<<<< HEAD
     def _urlsafe_base_64(self):
         """
         Randomly generates hashed tokens (used for session/update tokens)
@@ -72,6 +73,8 @@ class User(db.Model):
 
 
 
+=======
+>>>>>>> 8400b17acba32dd1df16450a5ce943ec5d50bba4
     def renew_session(self):
         """
         TODO

@@ -39,6 +39,7 @@ def renew_session(update_token):
 
     if user is None:
         raise Exception("Invalid update token")
+<<<<<<< HEAD
     
     user.renew_session()
     db.session.commit()
@@ -62,3 +63,10 @@ def create_user(username):
     db.session.add(user)
     db.session.commit()
     return True, user
+=======
+
+    user.renew_session()
+    db.session.commit()
+    
+    return user
+>>>>>>> 8400b17acba32dd1df16450a5ce943ec5d50bba4
