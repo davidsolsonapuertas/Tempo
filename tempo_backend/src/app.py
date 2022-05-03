@@ -283,13 +283,18 @@ def store_user():
     )
 
 
-@app.route("/tempo/playlist/")
-def get_playlists():
+@app.route("/tempo/playlist/<user_id>")
+def get_playlists(user_id):
     """
-    Endpoint for getting all favorited playlists.
+    Endpoint for getting all favorited playlists of user using their id.
 
+    Args:
+        user_id (int): id of the user in the table
+    No request body.
+
+    Returns: 
     """
-    return success_response({"playlists": [p.simple_serialize() for p in Playlist.query.all()]})
+    return success_response({"playlists": [p.simple_serialize() for p in Playlist.query.filter_by(id=user_id)]})
 
 
 @app.route("/tempo/playlist/<playlist_id>/")
@@ -299,7 +304,6 @@ def get_playlist_tracks(playlist_id):
 
     Args:
         playlist_id (int): id of the playlist
-
     No request body.
 
     Returns: json of list of tracks (see api)
