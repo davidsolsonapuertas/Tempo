@@ -2,6 +2,7 @@ import datetime
 import hashlib
 import os
 import bcrypt
+import requests
 from sqlalchemy import null, delete
 
 from flask_sqlalchemy import SQLAlchemy
@@ -19,15 +20,11 @@ class User(db.Model):
     """
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
+    """Spotify id of the user"""
 
     # user information
     username = db.Column(db.String, nullable=False, unique=True)
     """Username of user, same as the user's Spotify's username"""
-
-    # session information
-    session_token = db.Column(db.String, nullable=False, unique=True)
-    session_expiration = db.Column(db.DateTime, nullable=False)
-    update_token = db.Column(db.String, nullable=False, unique=True)
 
     # association information
     playlists = db.relationship(
@@ -41,16 +38,11 @@ class User(db.Model):
         Initializes a User object
 
         kwargs:
+            id (string): Spotify id of the user
             username (str): Username of Spotify user
-            session_token (str): Session token of Spotify user
-            session_expiration (str): Session expiration datetime of Spotify user
-            update_token (str): Update token of Spotify user
         """
+        self.id = kwargs.get("id")
         self.username = kwargs.get("username")
-        self.session_token = kwargs.get("session_token")
-        self.session_expiration = kwargs.get("session_expiration")
-        self.update_token = kwargs.get("update_token")
-        self.renew_session()
 
     def serialize(self):
         """
@@ -58,37 +50,8 @@ class User(db.Model):
         """
         return {
             "id": self.id,
-            "username": self.username,
-            "session_token": self.session_token,
-            "session_expiration": self.session_expiration,
             "playlists": [p.simple_serialize() for p in self.playlists]
         }
-
-    def _urlsafe_base_64(self):
-        """
-        Randomly generates hashed tokens (used for session/update tokens)
-        """
-        return hashlib.sha1(os.urandom(64)).hexdigest()
-
-    def renew_session(self):
-        """
-        Renews the sessions of the user
-        """
-        self.session_token = self._urlsafe_base_64()
-        self.session_expiration = datetime.datetime.now() + datetime.timedelta(days=1)
-        self.update_token = self._urlsafe_base_64()
-
-    def verify_session_token(self, session_token):
-        """
-        Verifies the session token of a user
-        """
-        return session_token == self.session_token and datetime.datetime.now() < self.session_expiration
-
-    def verify_update_token(self, update_token):
-        """
-        Verifies the update token of a user
-        """
-        return update_token == self.update_token
 
 
 class Playlist(db.Model):

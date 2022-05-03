@@ -52,6 +52,27 @@ def extract_token(request):
     return True, bearer_token
 
 
+def verify_session_token(session_token):
+    """
+    Verifies the session token of a user by sending a request to Spotify
+
+    Args:
+        session_token (string): Session token of the user
+
+    Returns:
+        boolean: True if the token is valid, false otherwise
+    """
+    verify_response = requests.get(
+        "https://api.spotify.com/v1/me",
+        headers={
+            "Content-type": "application/json",
+            "Authorization": "Bearer " + session_token
+        }
+    )
+
+    return verify_response.status_code != 401
+
+
 # ------------- ROUTES -------------
 
 @app.route("/")
@@ -78,92 +99,12 @@ def create_new_playlist():
         https://developer.spotify.com/documentation/web-api/reference/#/operations/get-several-tracks
     """
 
-    # verify user
+    # verify request has header
 
     was_successful, session_token = extract_token(request)
 
     if not was_successful:
         return session_token
-
-    user = users_dao.get_user_by_session_token(session_token)
-    if not user:
-        return failure_response("User not found")
-
-    # create playlist
-
-    body = json.loads(request.data)
-    hours = body.get("hours")
-    minutes = body.get("minutes")
-
-    if hours is None or minutes is None:
-        return failure_response("Request body is missing hours or minutes")
-
-
-@app.route("/tempo/login/", methods=["POST"])
-def store_user_token():
-    """
-    Endpoint for storing Spotify session tokens for user 
-
-    This function takes in the user's username and adds it to the database if the 
-    user does not already exist in there. The user's session_token, session_expiration,
-    and update_token are all returned
-    """
-    body = json.loads(request.data)
-    username = body.get("username")
-
-    if username is None:
-        return failure_response("Missing username")
-
-    was_successful, user = users_dao.create_user(username)
-
-    if not was_successful:
-        return failure_response("User already exists")
-
-    return success_response(
-        {
-            "session_token": user.session_token,
-            "session_expiration": str(user.session_expiration),
-            "update_token": user.update_token
-        }, 201
-    )
-
-
-@app.route("/tempo/<int:user_id>/", methods=["GET"])
-def get_user_token(user_id):
-    """
-    Endpoint for returning token associated with the user
-    """
-
-    user = User.query.filter_by(id=user_id).first()
-    if user is None:
-        return failure_response("User not found!")
-
-    tok = user.session_token
-
-    return tok
-
-
-@app.route("/tempo/playlist/", methods=["POST"])
-def create_new_playlist():
-    """
-    Endpoint for creating a new playlist from Spotify with specified playtime
-    Returns:
-        json: JSON containing list of tracks with total playtime of specified length.
-
-        The returned JSON is the same as the one listed on Spotify's API for getting several tracks at once:
-        https://developer.spotify.com/documentation/web-api/reference/#/operations/get-several-tracks
-    """
-
-    # verify user
-
-    was_successful, session_token = extract_token(request)
-
-    if not was_successful:
-        return session_token
-
-    user = users_dao.get_user_by_session_token(session_token)
-    if not user:
-        return failure_response("User not found")
 
     # create playlist
 
@@ -314,6 +255,34 @@ def find_tracklist_sum_helper(tracks, n, sum, fuzzy):
         return keep_last
 
 
+@app.route("/tempo/login/", methods=["POST"])
+def store_user():
+    """
+    Endpoint for storing Spotify id for user 
+
+    This function takes in the user's id and username and adds it to the database if the 
+    user does not already exist in there. The user's id and username are then returned.
+    """
+    body = json.loads(request.data)
+    id = body.get("id")
+    username = body.get("username")
+
+    if username is None:
+        return failure_response("Missing username")
+
+    was_successful, user = users_dao.create_user(id, username)
+
+    if not was_successful:
+        return failure_response("User already exists")
+
+    return success_response(
+        {
+            "id": user.id,
+            "username": user.username
+        }, 201
+    )
+
+
 @app.route("/tempo/playlist/")
 def get_playlists():
     """
@@ -328,7 +297,7 @@ def get_playlist_tracks(playlist_id):
     """
     Endpoint for getting a list of tracks in a playlist using the playlist's id.
 
-    Args: 
+    Args:
         playlist_id (int): id of the playlist
 
     No request body.
@@ -346,16 +315,16 @@ def get_playlist_tracks(playlist_id):
 def make_favorite(user_id):
     """
     Endpoint for "favoriting a playlist" by adding playlist for user (using user_id) 
-    to playlists table. 
+    to playlists table.
 
-    Args: 
+    Args:
         playlist_id (int): id of the playlist
 
-    Request body: 
+    Request body:
     {
         "tracks": [
             <spotify_id> (string),
-            <spotify_id> (string), 
+            <spotify_id> (string),
             ...
         ]
     }
@@ -392,15 +361,15 @@ def make_favorite(user_id):
 @app.route("/tempo/playlist/<playlist_id>/edit/", methods=["POST"])
 def edit_playlist_name(playlist_id):
     """
-    Endpoint for editing name of a favorited playlist by playlist's id. 
+    Endpoint for editing name of a favorited playlist by playlist's id.
 
-    Args: 
+    Args:
         playlist_id (int): id of the playlist
 
-    Request body: 
-        title: new title for the playlist 
+    Request body:
+        title: new title for the playlist
 
-    Returns: returns json of updated playlist (see api) 
+    Returns: returns json of updated playlist (see api)
     """
     playlist = playlist = Playlist.query.filter_by(id=playlist_id).first()
     if playlist is None:
@@ -415,14 +384,14 @@ def edit_playlist_name(playlist_id):
 @app.route("/tempo/playlist/<playlist_id>/", methods=["DELETE"])
 def delete_playlist(playlist_id):
     """
-    Endpoint for deleting a playlist by id. 
+    Endpoint for deleting a playlist by id.
 
-    Args: 
+    Args:
         playlist_id (int): id of the playlist
 
-    No request body. 
+    No request body.
 
-    Returns: returns success message 
+    Returns: returns success message
     """
     playlist = Playlist.query.filter_by(id=playlist_id).first()
     if playlist is None:
