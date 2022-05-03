@@ -283,13 +283,14 @@ def store_user():
     )
 
 
-@app.route("/tempo/playlist/<user_id>")
+@app.route("/tempo/playlist/<user_id>/", methods=["GET"])
 def get_playlists(user_id):
     """
     Endpoint for getting all favorited playlists of user using their id.
 
     Args:
         user_id (int): id of the user in the table
+
     No request body.
 
     Returns: 
