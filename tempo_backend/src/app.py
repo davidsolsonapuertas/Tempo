@@ -293,7 +293,7 @@ def get_playlists(user_id):
 
     No request body.
 
-    Returns: 
+    Returns: json of list of user's playlists
     """
     return success_response({"playlists": [p.simple_serialize() for p in Playlist.query.filter_by(id=user_id)]})
 
@@ -324,14 +324,13 @@ def make_favorite(user_id):
 
     Args:
         playlist_id (int): id of the playlist
-
     Request body:
     {
         "tracks": [
             <spotify_id> (string),
             <spotify_id> (string),
-            ...
-        ]
+            ...],
+        "length": <length of playlist> (int)
     }
 
     Returns: new favorited playlist as json
@@ -393,7 +392,6 @@ def delete_playlist(playlist_id):
 
     Args:
         playlist_id (int): id of the playlist
-
     No request body.
 
     Returns: returns success message
