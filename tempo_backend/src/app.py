@@ -314,23 +314,27 @@ def find_tracklist_sum_helper(tracks, n, sum, fuzzy):
         return keep_last
 
 
-@app.route("/tempo/playlist/")
-def get_playlists():
+@app.route("/tempo/playlist/<user_id>")
+def get_playlists(user_id):
     """
-    Endpoint for getting all favorited playlists.
+    Endpoint for getting all favorited playlists of user using their id.
 
+    Args:
+        user_id (int): id of the user in the table
+    No request body.
+
+    Returns: 
     """
-    return success_response({"playlists": [p.simple_serialize() for p in Playlist.query.all()]})
+    return success_response({"playlists": [p.simple_serialize() for p in Playlist.query.filter_by(id=user_id)]})
 
 
 @app.route("/tempo/playlist/<playlist_id>/")
 def get_playlist_tracks(playlist_id):
     """
     Endpoint for getting a list of tracks in a playlist using the playlist's id.
-
+    
     Args: 
         playlist_id (int): id of the playlist
-
     No request body.
 
     Returns: json of list of tracks (see api)
@@ -347,10 +351,9 @@ def make_favorite(user_id):
     """
     Endpoint for "favoriting a playlist" by adding playlist for user (using user_id) 
     to playlists table. 
-
+    
     Args: 
         playlist_id (int): id of the playlist
-
     Request body: 
     {
         "tracks": [
@@ -393,13 +396,12 @@ def make_favorite(user_id):
 def edit_playlist_name(playlist_id):
     """
     Endpoint for editing name of a favorited playlist by playlist's id. 
-
+   
     Args: 
         playlist_id (int): id of the playlist
-
     Request body: 
         title: new title for the playlist 
-
+    
     Returns: returns json of updated playlist (see api) 
     """
     playlist = playlist = Playlist.query.filter_by(id=playlist_id).first()
@@ -416,10 +418,9 @@ def edit_playlist_name(playlist_id):
 def delete_playlist(playlist_id):
     """
     Endpoint for deleting a playlist by id. 
-
+   
     Args: 
         playlist_id (int): id of the playlist
-
     No request body. 
 
     Returns: returns success message 
