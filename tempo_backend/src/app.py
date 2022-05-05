@@ -175,29 +175,31 @@ def create_new_playlist():
         if i < 4:
             seed_tracks += ","
 
-    recommendations_response = requests.get(
-        "https://api.spotify.com/v1/recommendations",
-        headers={
-            "Content-type": "application/json",
-            "Authorization": "Bearer " + session_token
-        },
-        data={
-            "seed_artists": seed_artists,
-            "seed_genres": seed_genres,
-            "seed_tracks": seed_tracks,
-            "limit": int(playtime_sec/60)
-        }
-    ).json()
-    if not recommendations_response["error"] is None:
-        return failure_response(recommendations_response["error"]["message"], recommendations_response["error"]["status"])
+    got_playlist = False
+    while not got_playlist:
+        recommendations_response = requests.get(
+            "https://api.spotify.com/v1/recommendations",
+            headers={
+                "Content-type": "application/json",
+                "Authorization": "Bearer " + session_token
+            },
+            data={
+                "seed_artists": seed_artists,
+                "seed_genres": seed_genres,
+                "seed_tracks": seed_tracks,
+                "limit": int(playtime_sec/60)
+            }
+        ).json()
+        if not recommendations_response["error"] is None:
+            return failure_response(recommendations_response["error"]["message"], recommendations_response["error"]["status"])
 
-    playlist = find_tracklist_sum(
-        recommendations_response["tracks"], playtime_sec)
+        playlist, got_playlist = find_tracklist_sum(
+            recommendations_response["tracks"], playtime_sec)
 
     return success_response({"tracks": playlist})
 
 
-def find_tracklist_sum(tracklist, sum, increment_fuzzy=60):
+def find_tracklist_sum(tracklist, sum, increment_fuzzy=60, fuzzy_limit=180):
     """    
     Find a sublist of tracklist with total playtime equal to given value sum
 
@@ -205,18 +207,20 @@ def find_tracklist_sum(tracklist, sum, increment_fuzzy=60):
         tracklist (list): List of tracks
         sum (int): Target sum to find in seconds
         increment_fuzzy (int, optional): Number of seconds to increment fuzzy by. Defaults to 60.
+        fuzzy_limit (int, optional): Number of seconds that fuzzy should be limited to. Defaults to 180.
 
     Returns:
         list: List of tracks with total playtime equal to given value sum
+        bool: If playlist was found within alloted fuzzy limit
     """
     playlist = []
     fuzzy = 0
-    while len(playlist) == 0:
+    while len(playlist) == 0 and fuzzy <= fuzzy_limit:
         playlist = find_tracklist_sum_helper(
             tracklist, len(tracklist), sum, fuzzy)
         fuzzy += increment_fuzzy
 
-    return playlist
+    return playlist, fuzzy <= fuzzy_limit
 
 
 def find_tracklist_sum_helper(tracks, n, sum, fuzzy):
@@ -226,7 +230,7 @@ def find_tracklist_sum_helper(tracks, n, sum, fuzzy):
     Returns empty list if one is not found
 
     Args:
-        tracks (list): List where tracks to be searched through
+        tracks (list): List of tracks to be searched through
         n (int): Length of tracks
         sum (int): Target sum to find in seconds
         fuzzy (int): Leniency on how close the tracklist playtime and sum should be in seconds
