@@ -19,7 +19,7 @@ class User(db.Model):
     Has 1-to-many relationship with Playlist model
     """
     __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String, primary_key=True)
     """Spotify id of the user"""
 
     # user information
@@ -82,7 +82,7 @@ class Playlist(db.Model):
     """
 
     # association information
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(db.String, db.ForeignKey("users.id"), nullable=False)
     """Playlist model has many-to-1 relationship with User model"""
 
     tracks = db.relationship(

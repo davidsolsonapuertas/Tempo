@@ -73,6 +73,25 @@ def verify_session_token(session_token):
     return verify_response.status_code != 401
 
 
+def get_user_from_token(session_token):
+    """
+    """
+    if (verify_session_token(session_token) == True):
+        user_profile = requests.get(
+            "https://api.spotify.com/v1/me",
+            headers={
+                "Content-type": "application/json",
+                "Authorization": "Bearer " + session_token
+            }
+        )
+
+        user_id = user_profile.get("id")
+
+    else:
+        failure_response("Session token is invalid, cannot get user.")
+
+    return user_id
+
 # ------------- ROUTES -------------
 
 @app.route("/")
@@ -287,18 +306,19 @@ def store_user():
     )
 
 
-@app.route("/tempo/playlist/<user_id>/", methods=["GET"])
-def get_playlists(user_id):
+@app.route("/tempo/playlist/<session_token>/", methods=["GET"])
+def get_playlists(session_token):
     """
-    Endpoint for getting all favorited playlists of user using their id.
+    Endpoint for getting all favorited playlists of user using their Spotify id.
 
     Args:
-        user_id (int): id of the user in the table
+        session_token (string): session token for authorization
 
     No request body.
 
     Returns: json of list of user's playlists
     """
+    user_id = get_user_from_token(session_token)
     return success_response({"playlists": [p.simple_serialize() for p in Playlist.query.filter_by(id=user_id)]})
 
 
@@ -320,14 +340,14 @@ def get_playlist_tracks(playlist_id):
     return success_response(playlist.tracks_serialize())
 
 
-@app.route("/tempo/playlist/<user_id>/favorite/", methods=["POST"])
-def make_favorite(user_id):
+@app.route("/tempo/playlist/<session_token>/favorite/", methods=["POST"])
+def make_favorite(session_token):
     """
-    Endpoint for "favoriting a playlist" by adding playlist for user (using user_id) 
+    Endpoint for "favoriting a playlist" by adding playlist for user (using their session_token) 
     to playlists table.
 
     Args:
-        playlist_id (int): id of the playlist
+        session_token (string): current session_token of the user
     Request body:
     {
         "tracks": [
@@ -346,6 +366,8 @@ def make_favorite(user_id):
     length = body.get("length")
     if (track_ids is None) or (length is None):
         return failure_response("Must include tracks and length in request body.", 400)
+
+    user_id = get_user_from_token(session_token)
 
     favorite_playlist = Playlist(
         sum_length=length,
