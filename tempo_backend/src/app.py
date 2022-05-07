@@ -1,14 +1,12 @@
 import json
 import users_dao
-import datetime
-import requests
+import spotipy
 
 from db import db
-from db import User
 from db import Playlist
 from db import Track
 from flask import Flask, request
-from db import User
+from spotipy import SpotifyException
 
 db_filename = "tempo.db"
 app = Flask(__name__)
@@ -23,6 +21,7 @@ with app.app_context():
 
 
 # generalized response formats
+
 def success_response(data, code=200):
     """
     Generalized success response function
@@ -52,47 +51,30 @@ def extract_token(request):
     return True, bearer_token
 
 
-def verify_session_token(session_token):
-    """
-    Verifies the session token of a user by sending a request to Spotify
-
-    Args:
-        session_token (string): Session token of the user
-
-    Returns:
-        boolean: True if the token is valid, false otherwise
-    """
-    verify_response = requests.get(
-        "https://api.spotify.com/v1/me",
-        headers={
-            "Content-type": "application/json",
-            "Authorization": "Bearer " + session_token
-        }
-    )
-
-    return verify_response.status_code != 401
-
-
 def get_user_from_token(session_token):
     """
+    Returns user id given a session token
+    
+    Args:
+        session_token (string): Session token of the user
+    
+    Returns:
+        string: Spotify id of the user
     """
-    if (verify_session_token(session_token) == True):
-        user_profile = requests.get(
-            "https://api.spotify.com/v1/me",
-            headers={
-                "Content-type": "application/json",
-                "Authorization": "Bearer " + session_token
-            }
-        )
-
-        user_id = user_profile.get("id")
-
-    else:
-        failure_response("Session token is invalid, cannot get user.")
+    sp = spotipy.Spotify(auth=session_token)
+    
+    try:
+        me = sp.current_user()
+    except SpotifyException as e:
+        error_message = e.msg.split("\n")[1].strip()
+        return failure_response(error_message, e.http_status)
+    
+    user_id = me["id"]
 
     return user_id
 
 # ------------- ROUTES -------------
+
 
 @app.route("/")
 def hello_world():
@@ -103,7 +85,7 @@ def hello_world():
         json: JSON with value "Hello world!"
     """
     return success_response("Hello world!")
-
+    
 
 @app.route("/tempo/playlist/", methods=["POST"])
 def create_new_playlist():
@@ -136,112 +118,71 @@ def create_new_playlist():
 
     playtime_sec = int(hours)*60*60 + int(minutes)*60
 
-    top_artists_response = requests.get(
-        "https://api.spotify.com/v1/me/top/type/artists",
-        headers={
-            "Content-type": "application/json",
-            "Authorization": "Bearer " + session_token
-        },
-        data={
-            "limit": 5
-        }
-    ).json()
-    if not top_artists_response["error"] is None:
-        return failure_response(top_artists_response["error"]["message"], top_artists_response["error"]["status"])
+    sp = spotipy.Spotify(auth=session_token)
 
-    top_genre_response = requests.get(
-        "https://api.spotify.com/v1/recommendations/available-genre-seeds",
-        headers={
-            "Content-type": "application/json",
-            "Authorization": "Bearer " + session_token
-        }
-    ).json()
-    if not top_genre_response["error"] is None:
-        return failure_response(top_genre_response["error"]["message"], top_genre_response["error"]["status"])
-
-    top_tracks_response = requests.get(
-        "https://api.spotify.com/v1/me/top/type/tracks",
-        headers={
-            "Content-type": "application/json",
-            "Authorization": "Bearer " + session_token
-        },
-        data={
-            "limit": 5
-        }
-    ).json()
-    if not top_tracks_response["error"] is None:
-        return failure_response(top_tracks_response["error"]["message"], top_tracks_response["error"]["status"])
-
-    top_artists_list = top_artists_response["items"]
-    top_genre_list = top_genre_response["genres"]
-    top_tracks_list = top_tracks_response["items"]
-
-    seed_artists = ""
-    for i in range(len(top_artists_list)):
-        seed_artists += top_artists_list[i]["id"]
-        if i < 4:
-            seed_artists += ","
-
-    seed_genres = ""
-    for i in range(len(top_genre_list)):
-        seed_genres += top_genre_list[i]
-        if i < 4:
-            seed_genres += ","
-
-    seed_tracks = ""
-    for i in range(len(top_tracks_list)):
-        seed_tracks += top_tracks_list[i]["id"]
-        if i < 4:
-            seed_tracks += ","
-
+    try:
+        recently_played = sp.current_user_recently_played(limit=5)
+    except SpotifyException as e:
+        error_message = e.msg.split("\n")[1].strip()
+        return failure_response(error_message, e.http_status)
+    
+    seed_tracks = []
+    for p in recently_played["items"]:
+        seed_tracks.append(p["track"]["id"])
+        
     got_playlist = False
     while not got_playlist:
-        recommendations_response = requests.get(
-            "https://api.spotify.com/v1/recommendations",
-            headers={
-                "Content-type": "application/json",
-                "Authorization": "Bearer " + session_token
-            },
-            data={
-                "seed_artists": seed_artists,
-                "seed_genres": seed_genres,
-                "seed_tracks": seed_tracks,
-                "limit": int(playtime_sec/60)
-            }
-        ).json()
-        if not recommendations_response["error"] is None:
-            return failure_response(recommendations_response["error"]["message"], recommendations_response["error"]["status"])
-
-        playlist, got_playlist = find_tracklist_sum(
-            recommendations_response["tracks"], playtime_sec)
+        try:
+            recommendations_response = sp.recommendations(limit=100, seed_tracks=seed_tracks)
+        except SpotifyException as e:
+            error_message = e.msg.split("\n")[1].strip()
+            return failure_response(error_message, e.http_status)
+        
+        playlist, got_playlist = find_tracklist_sum(recommendations_response["tracks"], playtime_sec)
+        
+    playlist_dur = 0
+    for t in playlist:
+        playlist_dur += int(t["duration_ms"]/1000)
 
     return success_response({"tracks": playlist})
 
 
-def find_tracklist_sum(tracklist, sum, increment_fuzzy=60, fuzzy_limit=180):
+def find_tracklist_sum(tracklist, sum, fuzzy=30):
+    
     """    
     Find a sublist of tracklist with total playtime equal to given value sum
 
     Args:
         tracklist (list): List of tracks
         sum (int): Target sum to find in seconds
-        increment_fuzzy (int, optional): Number of seconds to increment fuzzy by. Defaults to 60.
-        fuzzy_limit (int, optional): Number of seconds that fuzzy should be limited to. Defaults to 180.
+        fuzzy (int, optional): Leniency on how close the tracklist playtime and sum should be in seconds. Defaults to 30.
 
     Returns:
         list: List of tracks with total playtime equal to given value sum
         bool: If playlist was found within alloted fuzzy limit
     """
     playlist = []
-    fuzzy = 0
-    while len(playlist) == 0 and fuzzy <= fuzzy_limit:
-        playlist = find_tracklist_sum_helper(
-            tracklist, len(tracklist), sum, fuzzy)
-        fuzzy += increment_fuzzy
+    time_left = sum
+    
+    while time_left > 0 and len(tracklist) > 0:
+        last_track = tracklist.pop()
+        last_length = int(last_track["duration_ms"]/1000)
+        playlist.append(last_track)
+        time_left -= last_length
+    
+    while abs(time_left) > fuzzy and len(tracklist) > 0:
+        removed_track = playlist.pop()
+        removed_length = int(removed_track["duration_ms"]/1000)
+        time_left += removed_length
+        
+        last_track = tracklist.pop()
+        last_length = int(last_track["duration_ms"]/1000)
+        playlist.append(last_track)
+        time_left -= last_length
 
-    return playlist, fuzzy <= fuzzy_limit
+    return playlist, len(tracklist) > 0
 
-
+# not used - too slow
 def find_tracklist_sum_helper(tracks, n, sum, fuzzy):
     """
     Helper function for finding tracklist with total playtime equal to given value sum
@@ -259,9 +200,9 @@ def find_tracklist_sum_helper(tracks, n, sum, fuzzy):
     """
     if n == 0:
         return []
-
+    
     last_track = tracks[n-1]
-    last_length = last_track["duration_ms"]/1000
+    last_length = int(last_track["duration_ms"]/1000)
 
     if abs(sum - last_length) <= fuzzy:
         return [last_track]
