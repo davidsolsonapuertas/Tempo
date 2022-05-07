@@ -12,9 +12,22 @@
 ## Description
 A music app that creates playlists based on song durations to match the duration of a user's task, as inputted in the app.
 
-# Requirements
+## Android Requirements
+- A completed Recycler View with a custom adapter
 
-## Backend
+- Integration with an API created by backend with use of OkHTTP and Moshi.
+
+- Use of two 3rd party libraries (We've covered a little bit of Firebase, showcased Glide, or feel free to explore: here are others)
+
+- At the minimum, three fully functional fragments with some system of navigation.
+  
+We have two recycler views: One for the playlist displaying songs, another one for a list of playlist.
+  
+We used OkHTTP3, the Spotify OAuth API and Glide
+  
+We have four functional fragments: One to login, another one to input the hours and minutes, another one to show the playlist, another one to show the playlists saved, and another one to edit the playlist name.
+  
+## Backend Requirements
 ### At least 4 routes (1 must be GET, 1 must be POST, 1 must be DELETE)
 
 List of our 4 most important routes in the app:
@@ -56,14 +69,6 @@ Returns:
     json: JSON containing list of tracks with total playtime of specified length.
     The returned JSON is the same as the one listed on Spotify's API for getting several tracks at once:
     https://developer.spotify.com/documentation/web-api/reference/#/operations/get-several-tracks
-```
-
-POST /tempo/login/
-```
-Endpoint for storing Spotify id for user 
-
-This function takes in the user's id and username and adds it to the database if the 
-user does not already exist in there. The user's id and username are then returned.
 ```
 
 GET /tempo/playlist/<session_token>
@@ -139,7 +144,7 @@ Returns: returns success message
 
 We utilized session tokens to store Spotify authentication, which was then used to create playlists from personalized recommendations.
 
-## Design
+## Design Requirements
 The design consists of six screens: login, home, playlist information (with icons), playlist naming, saved playlists, and playlist information (without icons). The features include signing in via Spotify, entering a desired playlist duration, creating a playlist of the specified duration, naming playlists, saving playlists, and viewing saved playlists. 
 
 The design started with low-fidelity sketches of the main screens: logging in, inputting playlist duration, displaying playlist information, and displaying saved playlists. The designs were then translated to medium-fidelity sketches and explorations of how the screens may look like. Finally, the designs were finalized in high-fidelity, complete with prototyping of visual designs and element interactions. The interactions involved creating flows for users to go from signing in to seeing a generated playlist of appropriate duration. The visual design involved prominent use of the font Gotham Pro and the colors green, gray, black, and white—with more information detailed in the accompanying UI Kit.
