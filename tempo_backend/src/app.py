@@ -263,7 +263,7 @@ def get_playlists(session_token):
     return success_response({"playlists": [p.simple_serialize() for p in Playlist.query.filter_by(id=user_id)]})
 
 
-@app.route("/tempo/playlist/<playlist_id>/")
+@app.route("/tempo/playlist/<playlist_id>/", methods=["GET"])
 def get_playlist_tracks(playlist_id):
     """
     Endpoint for getting a list of tracks in a playlist using the playlist's id.
